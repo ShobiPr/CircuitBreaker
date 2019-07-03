@@ -14,22 +14,26 @@ public class CircuitBreaker {
         this.maxResponseTime = maxResponseTime;
         this.calls = new int[100];
         this.timeoutTime = timeoutTime;
+        this.lastFailureTime = new long[numServer];
+        this.responseTime = new long[numServer];
     }
 
     // true - good, false - broken
-    // 0 - call port, 1 = new check, 2 - set in queue
-   public int callEndpoint(Message msg) {
-       int res = 0;
+    // 0 - call port, 1 = set in queue
+   public boolean handleMessage(Message msg) {
+       boolean res = true;
        int id = msg.getId();
 
        if (calls[id] != 0){
+           //System.out.println("In handleMessage " + msg.getPort());
            if (!states[msg.getPort()]){
                if (System.currentTimeMillis() - lastFailureTime[msg.getPort()] > timeoutTime){
                    calls[id]++;
-                   res = 1;
-                   lastFailureTime[msg.getPort()] = 0;
+                   //System.out.println("In handleMessage: Timeout mode done - try to reconnect: " + id);
+                   res = true;
                } else {
-                   res = 2;
+                   //System.out.println("In handleMessage: Timeout - cannot connect: " + id);
+                   res = false;
                }
            }
        }
@@ -40,7 +44,7 @@ public class CircuitBreaker {
 
     public Message handleResponse(Response rsp) {
 
-        int port = rsp.msg.getPort();
+        int port = rsp.getPort();
         states[port] = rsp.getStatus();
         responseTime[port] = rsp.getResponseTime();
 
@@ -52,7 +56,12 @@ public class CircuitBreaker {
                 errorCounter[port]++; //log the error
                 return rsp.msg; //add message to queue
             }
+        } else if (!states[port]){
+            lastFailureTime[port] = System.currentTimeMillis(); //start timeout
+            errorCounter[port]++; //log the error
+            return rsp.msg; //add message to queue
         }
+
         return null;
     }
 }

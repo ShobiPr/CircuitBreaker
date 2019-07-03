@@ -4,7 +4,7 @@ public class Message {
     String text;
     int id;
 
-    public Message(int number, String text, int id){
+    public Message(int id,  String text, int number){
         this.port = number;
         this.text = text;
         this.id = id;

@@ -39,7 +39,7 @@ public class Queue {
             if( waitingTimes[i] == 0){
                 resultList.add(messages[i]);
                 //remove message from queue, bubble all elements downwards.
-                for(int j = i; j < idx; j++){
+                for(int j = i; j < idx - 1; j++){
                     messages[j] = messages[j+1];
                     waitingTimes[j] = waitingTimes[j+1];
                 }

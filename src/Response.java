@@ -17,4 +17,9 @@ public class Response {
     public boolean getStatus(){
         return status;
     }
+
+    public int getPort(){
+        return msg.getPort();
+    }
+
 }

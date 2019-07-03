@@ -11,25 +11,21 @@ public class Endpoint {
         this.numEndpoints = numEndpoints;
         this.serverStatus = new boolean[numEndpoints];
         this.reponseTime = new long[numEndpoints];
+        setEndpoints();
     }
 
     public void setEndpoints(){
 
-        for (int i = 0; i < numEndpoints; i++){
+        for (int i = 0; i < numEndpoints; i++) {
+           serverStatus[i] = true;
+        }
+            /*serverStatus[7] = false;
+            serverStatus[8] = false;
+            serverStatus[9] = false;  */
 
-            //set serverStatus for each server
-            int random = (int)(Math.random() * 50);
-            if (random > 25){
-                serverStatus[i] = true;
-            } else {
-                serverStatus[i] = false;
-            }
-
-            //set responsTime for each server
+         for (int i = 0; i < numEndpoints; i++){
             long time = (long)(Math.random() * 3000);
             reponseTime[i] = time;
-            System.out.println(reponseTime[i]);
-
         }
     }
 
@@ -42,8 +38,15 @@ public class Endpoint {
     }
 
      public Response sendResponse(Message msg){
-        Response res = new Response(getServerStatus(msg),getResponseTime(msg), msg);
+        System.out.println("In SendResponse");
+        boolean serverStatus = getServerStatus(msg);
+        long responsetime = getResponseTime(msg);
+        Response res = new Response(serverStatus,responsetime, msg);
         return res;
+    }
+
+    public void fixServer(int port){
+         serverStatus[port] = true;
     }
 
 }
