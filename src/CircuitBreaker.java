@@ -1,36 +1,48 @@
 public class CircuitBreaker {
 
     int[] errorCounter;
-    long[] failureTime;
+    long[] lastFailureTime;
     boolean[] states;
-    long timeout = 2000*10000;
+    long maxResponseTime;
+    long[] responseTime;
+    int[] calls;
+    long timeoutTime;
 
-
-    public CircuitBreaker(int numServer){
-        this.state = new boolean[numServer];
+    public CircuitBreaker(int numServer, long maxResponseTime, long timeoutTime){
+        this.states = new boolean[numServer];
         this.errorCounter = new int[numServer];
-        this.lastFailureTime = new long[numServer];
+        this.maxResponseTime = maxResponseTime;
+        this.calls = new int[100];
+        this.timeoutTime = timeoutTime;
     }
 
     // true - good, false - broken
-    // 1 = new check, 2 - set in queue, 0 - call port
-   public int getPort(Message msg) {
+    // 0 - call port, 1 = new check, 2 - set in queue
+   public int callEndpoint(Message msg) {
        int res = 0;
-       if (!states[port]) {
-           if (System.nanoTime() - failureTime[port] > timeout) {
-               res = 1; // call port again
-           } else {
-               res = 2; // set in queue
+       int id = msg.getId();
+
+       if (calls[id] != 0){
+           if (!states[msg.getPort()]){
+               if (System.currentTimeMillis() - lastFailureTime[msg.getPort()] > timeoutTime){
+                   calls[id]++;
+                   res = 1;
+                   lastFailureTime[msg.getPort()] = 0;
+               } else {
+                   res = 2;
+               }
            }
        }
+
+       calls[id]++;
        return res;
    }
+
+   //response class {fail, message, }
 
     public Message handleRespond(int port, int status, Message msg) {
         switch (status) {
             case -1: //timeout
-
-
                 break;
 
             case 0: // OK
@@ -52,5 +64,21 @@ public class CircuitBreaker {
 
     }
 
+    public void collectRespond(Response rsp) {
+
+        int id = rsp.msg.getId();
+        int port = rsp.msg.getPort();
+
+        states[port] = rsp.getStatus();
+        responseTime[port] = rsp.getResponseTime();
+
+        if (responseTime[port] >= maxResponseTime) {
+            if (states[port] != false) {
+                states[port] = false;
+                lastFailureTime[port] = System.currentTimeMillis();
+            }
+
+        }
+    }
 }
 

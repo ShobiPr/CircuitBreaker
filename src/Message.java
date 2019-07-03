@@ -1,23 +1,29 @@
 public class Message {
 
-    int number;
+    int port;
     String text;
+    int id;
 
-    public Message(int number, String text){
-        this.number = number;
+    public Message(int number, String text, int id){
+        this.port = number;
         this.text = text;
+        this.id = id;
     }
 
-    public int getNumber() {
-        return number;
+    public int getPort() {
+        return port;
     }
 
     public  String getText(){
         return text;
     }
 
-    public void setNumber(int number) {
-        this.number = number;
+    public int getId() {
+        return id;
+    }
+
+    public void setPort(int number) {
+        this.port = number;
     }
 
     public void setText(String text) {
