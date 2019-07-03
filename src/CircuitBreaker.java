@@ -1,12 +1,12 @@
 public class CircuitBreaker {
 
     int[] errorCounter;
-    long[] lastFailureTime;
-    boolean[] states;
-    long maxResponseTime;
-    long[] responseTime;
-    int[] calls;
-    long timeoutTime;
+    private long[] lastFailureTime;
+    private boolean[] states;
+    private long maxResponseTime;
+    private long[] responseTime;
+    private int[] calls;
+    private long timeoutTime;
 
     public CircuitBreaker(int numServer, long maxResponseTime, long timeoutTime){
         this.states = new boolean[numServer];
@@ -38,47 +38,22 @@ public class CircuitBreaker {
        return res;
    }
 
-   //response class {fail, message, }
+    public Message handleResponse(Response rsp) {
 
-    public Message handleRespond(int port, int status, Message msg) {
-        switch (status) {
-            case -1: //timeout
-                break;
-
-            case 0: // OK
-                return null;
-
-            case 1: //fail
-                errorCounter[port]++;
-                failureTime[port] = System.nanoTime();
-                states[port] = false;
-                //log
-                //send msg to queue (main)
-                break;
-
-            default:
-                System.out.println("Unexpected behaviour");
-        }
-
-        return msg;
-
-    }
-
-    public void collectRespond(Response rsp) {
-
-        int id = rsp.msg.getId();
         int port = rsp.msg.getPort();
-
         states[port] = rsp.getStatus();
         responseTime[port] = rsp.getResponseTime();
 
-        if (responseTime[port] >= maxResponseTime) {
-            if (states[port] != false) {
+        //endpoint exceeds maxResponseTime
+        if (responseTime[port] >= maxResponseTime){
+            if (states[port]) {
                 states[port] = false;
-                lastFailureTime[port] = System.currentTimeMillis();
+                lastFailureTime[port] = System.currentTimeMillis(); //start timeout
+                errorCounter[port]++; //log the error
+                return rsp.msg; //add message to queue
             }
-
         }
+        return null;
     }
 }
 
