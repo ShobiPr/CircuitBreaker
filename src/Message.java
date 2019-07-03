@@ -12,7 +12,7 @@ public class Message {
         return number;
     }
 
-    public  String getText(){
+    public  String getText() {
         return text;
     }
 
