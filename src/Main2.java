@@ -3,17 +3,15 @@ import java.util.ArrayList;
 public class Main2 {
     public static void main(String[] args){
 
-        //COMMUNICATION AREA
         int MAX_MESSAGES = 100000; // set appropriate max size
         int AMOUNT_MESSAGES = 100000;
         int AMOUNT_ENDPOINTS = 10;
 
         Endpoint ep = new Endpoint(AMOUNT_ENDPOINTS, 3000);
-        Queue qt = new Queue(AMOUNT_MESSAGES);
-        Response res;
-        int msgCounter = 0;
+        Queue queue = new Queue(AMOUNT_MESSAGES);
 
-        //Create messages
+
+        //Create all messages to be sent.
         ArrayList<Message> messageList = new ArrayList<Message>();
         Message msg;
         int randomPort;
@@ -24,70 +22,62 @@ public class Main2 {
             System.out.println("Message created with port: " + msg.getPort());
         }
 
+
         int maxResponseTime = 2700;
-        int iteration = 0;
-        int errors;
-        int calls;
-        int callCounter = 0;
+        int iteration = 0; int callCounter = 0; int completedMessages = 0;
+        int errors, calls;
+        Response response;
         int[] errorCounter = new int[AMOUNT_ENDPOINTS];
 
+        while( completedMessages < AMOUNT_MESSAGES) {
+            //ITERATION LOOP
 
-        while( msgCounter < AMOUNT_MESSAGES) {
-
-            //calls to endpoint and handle response
-
-            for (int i = 0; i < messageList.size(); i++) {
-
+            for(int i = 0; i < messageList.size(); i++) {
+                //For each message in list:
                 Message m = messageList.get(i);
-                //System.out.println("FOR LOOP: Current message: " + m.getId());
-
-                res = ep.sendResponse(m);
+                response = ep.sendResponse(m);
                 callCounter++;
 
+                long responseTime = response.getResponseTime();
 
-                long responseTime = res.getResponseTime();
-
-                if(responseTime >= maxResponseTime || !res.getStatus()) {
-                    errorCounter[res.getPort()]++; // log the error
-                    qt.add(m);
+                if(responseTime >= maxResponseTime || !response.getStatus()) {
+                    //Too large responseTime OR endpoint is down.
+                    errorCounter[response.getPort()]++; // log the error
+                    queue.add(m);
                     System.out.println("Message back in queue: " + m.getId());
                 }else{
-                    //Message sent success
-                    msgCounter ++;
-                    System.out.println("ITTERATION: " + iteration + ", Message ["+m.getId()+"] finished. Total messages completed: " + msgCounter);
+                    //Message sent successful
+                    completedMessages ++;
+                    System.out.println("ITTERATION: " + iteration + ", Message ["+m.getId()+"] finished. Total messages completed: " + completedMessages);
                 }
             }//end for
             
 
-            
-            messageList = qt.getNext();
+            messageList = queue.getNext(); // Update messageList
             if(messageList.size() > 0 ) System.out.println("Messages for next iteration: " );
             for(int j = 0; j < messageList.size(); j++){
                 System.out.println(messageList.get(j).getId());
             }
 
-            
-            qt.nextIteration();
+            queue.nextIteration();
             iteration++;
 
-            if(iteration >= 4 ) ep.fixAll();
-
+            if(iteration >= 4 ) ep.fixAll(); // Decide that all servers should be fixed after 4 iterations.
             System.out.println();
         } // while
 
 
-        System.out.println("\nITERATION: " + iteration + "  All messages completed. Total messages delivered: " + msgCounter);
+
+        System.out.println("\nITERATION: " + iteration + "  All messages completed. Total messages delivered: " + completedMessages);
         int errorCtr = 0;
 
-        System.out.println("AMOUNT OF LOGGS: ");
+        System.out.println("AMOUNT OF LOGGS - WITHOUT CIRCUIT BREAKER: ");
         for(int i = 0; i < errorCounter.length; i++){
             System.out.println("Server ["+i+"]: " + errorCounter[i]);
             errorCtr += errorCounter[i];
         }
 
         System.out.println("Total Logs: " + errorCtr +", total calls: " + callCounter);
-
-
 
     }
 }
