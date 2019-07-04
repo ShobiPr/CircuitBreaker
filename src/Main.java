@@ -1,6 +1,4 @@
-import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Random;
 
 public class Main {
 
@@ -10,7 +8,7 @@ public class Main {
         int AMOUNT_MESSAGES = 100000;
         int AMOUNT_ENDPOINTS = 10;
 
-        CircuitBreaker cb = new CircuitBreaker(AMOUNT_ENDPOINTS,2700, 2000);
+        CircuitBreaker cb = new CircuitBreaker(AMOUNT_ENDPOINTS,2700, 2000, 1000000);
         Endpoint ep = new Endpoint(AMOUNT_ENDPOINTS, 3000);
         Queue queue = new Queue(AMOUNT_MESSAGES);
 
@@ -72,14 +70,14 @@ public class Main {
 
         System.out.println("\nITERATION: " + iteration + "  All messages completed. Total messages delivered: " + completedMessages);
         int errorCtr = 0;
-        int[] log = cb.getLog();
+        int[] log = cb.getErrorLog();
         System.out.println("AMOUNT OF LOGGS - WITH CIRCUIT BREAKER ");
 
         for(int i = 0; i < log.length; i++){
             System.out.println("Server ["+i+"]: " + log[i]);
             errorCtr += log[i];
         }
-        System.out.println("Total Logs: " + errorCtr +", total calls: " + cb.getCalls());
+        System.out.println("Total Logs: " + errorCtr +", total calls: " + cb.getNumberOfCalls());
     } // main
 } //class
 
