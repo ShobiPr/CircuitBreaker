@@ -1,89 +1,87 @@
 public class CircuitBreaker {
 
-    int[] errorCounter;
+    private int[] errorCounter;
     private long[] lastFailureTime;
-    private boolean[] states;
+    private boolean[] serverStates;
     private long maxResponseTime;
     private long[] responseTime;
-    private int[] calls;
+    private int[] numberOfCalls;
     private long timeoutTime;
 
-    public CircuitBreaker(int numServer, long maxResponseTime, long timeoutTime){
-        this.states = new boolean[numServer];
+    public CircuitBreaker(int numServer, long maxResponseTime, long timeoutTime, int maxNumberOfCalls){
+        this.serverStates = new boolean[numServer];
         this.errorCounter = new int[numServer];
         this.maxResponseTime = maxResponseTime;
-        this.calls = new int[100000];
+        this.numberOfCalls = new int[maxNumberOfCalls];
         this.timeoutTime = timeoutTime;
         this.lastFailureTime = new long[numServer];
         this.responseTime = new long[numServer];
     }
 
-    // true - good, false - broken
-    // 0 - call port, 1 = set in queue
    public boolean handleMessage(Message msg) {
-       boolean res = true;
+
+       boolean call = true;
        int id = msg.getId();
        long responseTime = System.currentTimeMillis() - lastFailureTime[msg.getPort()]; // time since last failure
 
-       if (calls[id] != 0){
-           //Message has been here before
-           //System.out.println("In handleMessage " + msg.getPort());
-           if (!states[msg.getPort()]){
+       //Not first call to endport by this message
+       if (numberOfCalls[id] != 0){
+           if (!serverStates[msg.getPort()]){
                if (responseTime >= timeoutTime){
-                   calls[id]++;
-                   System.out.println("In handleMessage: Timeout mode done - try to reconnect: " + id);
-                   res = true;
+                   //Timeout done - try to call endport
+                   numberOfCalls[id]++;
+                   call = true;
 
                } else {
-                   System.out.println("In handleMessage: Timeout - cannot connect: " + id);
-                   System.out.println("responseTime: " + responseTime + ",   timeout threshold: "+ timeoutTime);
-                   res = false;
+                   //Timeout - set message to queue
+                   call = false;
                }
            }
-           return res;
+           return call;
        }
 
-       //First time a message visits
+       //First call by this message
+       //If timeout - don't call
        if(lastFailureTime[msg.getPort()] != 0){
-           res = false;
-       }else{
-           calls[id]++;
-       }
-       return res;
+           call = false;
+       } else {
+           numberOfCalls[id]++; }
+       return call;
    }
 
     public Message handleResponse(Response rsp) {
 
         int port = rsp.getPort();
-        states[port] = rsp.getStatus();
+        serverStates[port] = rsp.getStatus();
         responseTime[port] = rsp.getResponseTime();
 
+        //Response time too long or server broken
+        if (responseTime[port] >= maxResponseTime || !serverStates[port]){
 
-        if (responseTime[port] >= maxResponseTime || !states[port]){
-                //Response time too long or server broken
-                if (states[port]) {
-                    states[port] = false;
-                }
-                lastFailureTime[port] = System.currentTimeMillis(); //start timeout
-                errorCounter[port]++; //log the error
+            if (serverStates[port]) {
+                serverStates[port] = false;
+            }
+            //start timeout
+            lastFailureTime[port] = System.currentTimeMillis();
+            //log the error
+            errorCounter[port]++;
+
         } else {
-            //Message succesfully delivered to endpoint.
+            //Message successfully delivered to endpoint
             rsp.getMessage().setFinished();
             lastFailureTime[port] = 0;
         }
-
         return rsp.getMessage();
     }
 
+    public int[] getErrorLog() { return this.errorCounter; }
 
-    public int[] getLog() {return this.errorCounter;}
-
-    public int getCalls(){
-        int res = 0;
-        for(int i = 0; i < calls.length; i++){
-            res += calls[i];
+    public int getNumberOfCalls(){
+        int calls = 0;
+        for(int i = 0; i < numberOfCalls.length; i++){
+            calls += numberOfCalls[i];
         }
-        return res;
+        return calls;
     }
 }
 
