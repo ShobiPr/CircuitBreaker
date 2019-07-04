@@ -48,7 +48,7 @@ public class Queue {
             }
         }
         //We now have all messages which are done with the queue.
-        System.out.println("ITERATION: "+ iteration+ " There were [" +resultList.size()+"]  messages leaving the queue. ");
+        //System.out.println("ITERATION: "+ iteration+ " There were [" +resultList.size()+"]  messages leaving the queue. ");
         return resultList;
     }
 

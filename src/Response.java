@@ -22,4 +22,5 @@ public class Response {
         return msg.getPort();
     }
 
+    public Message getMessage(){return this.msg;}
 }
