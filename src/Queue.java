@@ -36,7 +36,7 @@ public class Queue {
         ArrayList<Message> resultList = new ArrayList<Message>();
 
         for(int i = 0; i < idx; i++){
-            if( waitingTimes[i] == 0){
+            if(waitingTimes[i] == 0){
                 resultList.add(messages[i]);
                 //remove message from queue, bubble all elements downwards.
                 for(int j = i; j < idx - 1; j++){
@@ -48,7 +48,6 @@ public class Queue {
             }
         }
         //We now have all messages which are done with the queue.
-        //System.out.println("ITERATION: "+ iteration+ " There were [" +resultList.size()+"]  messages leaving the queue. ");
         return resultList;
     }
 
@@ -60,7 +59,7 @@ public class Queue {
         }
     }
 
-
+    // Debug method
     public void printQueue(){
         System.out.println("There are " + idx + " elements in the queue:");
         for(int i = 0; i < idx; i++){

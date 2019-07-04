@@ -28,10 +28,9 @@ public class Message {
         this.port = number;
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
+    public void setText(String text) { this.text = text; }
 
     public void setFinished(){this.finished = true;}
+
     public boolean isFinished(){return this.finished;}
 }

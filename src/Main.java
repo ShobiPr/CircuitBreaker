@@ -6,18 +6,16 @@ public class Main {
 
     public static void main(String[] args){
 
-        //COMMUNICATION AREA
         int MAX_MESSAGES = 100000; // set appropriate max size
         int AMOUNT_MESSAGES = 100000;
         int AMOUNT_ENDPOINTS = 10;
 
         CircuitBreaker cb = new CircuitBreaker(AMOUNT_ENDPOINTS,2700, 2000);
         Endpoint ep = new Endpoint(AMOUNT_ENDPOINTS, 3000);
-        Queue qt = new Queue(AMOUNT_MESSAGES);
-        Response res;
-        int msgCounter = 0;
+        Queue queue = new Queue(AMOUNT_MESSAGES);
 
-        //Create messages
+
+        //Create Messages
         ArrayList<Message> messageList = new ArrayList<Message>();
         Message msg;
         int randomPort;
@@ -28,62 +26,60 @@ public class Main {
             System.out.println("Message created with port: " + msg.getPort());
         }
 
-        int ctr = 0;
-        while(  msgCounter < AMOUNT_MESSAGES) {
 
-            //calls to endpoint and handle response
-            boolean toCall;
-            for (int i = 0; i < messageList.size(); i++) {
+        int iteration = 0;
+        Response response;
+        int completedMessages = 0;
+        boolean callServer;
+        while(completedMessages < AMOUNT_MESSAGES) {
+            // ITERATION LOOP
 
+            for(int i = 0; i < messageList.size(); i++) {
+                //For each message
                 Message m = messageList.get(i);
                 System.out.println("FOR LOOP: Current message: " + m.getId());
-                toCall = cb.handleMessage(m);
+                callServer = cb.handleMessage(m);
 
-
-                if (toCall) {
-                    res = ep.sendResponse(m);
-                    m = cb.handleResponse(res);
-                    if (res.getStatus()) {
-                        msgCounter++; // success, message delivered
-                        System.out.println("ITTERATION: " + ctr + ", Message ["+m.getId()+"] finished. Total messages completed: " + msgCounter);
+                if (callServer) {
+                    response = ep.sendResponse(m);
+                    m = cb.handleResponse(response);
+                    if (response.getStatus()) {
+                        // success, message delivered
+                        completedMessages++;
+                        System.out.println("ITTERATION: " + iteration + ", Message ["+m.getId()+"] finished. Total messages completed: " + completedMessages);
                         continue;
                     }
                 }
+                //Put message in queue.
                 System.out.println("Message back in queue: " + m.getId());
                 System.out.println("Message " + m.getId() + " uses endpoint: " +m.getPort() + ", and this endpoint is: "  + ep.getServerStatus(m));
-                qt.add(m);
+                queue.add(m);
+            }//end for
 
-            }
 
-
-            messageList = qt.getNext();
+            messageList = queue.getNext(); //Update queue
             if(messageList.size() > 0 ) System.out.println("Messages for next iteration: " );
             for(int j = 0; j < messageList.size(); j++){
                 System.out.println(messageList.get(j).getId());
             }
 
-            qt.nextIteration();
-
-            ctr++;
-
-            if(ctr >= 4 ) ep.fixAll();
+            queue.nextIteration();
+            iteration++;
+            if(iteration >= 4 ) ep.fixAll();
 
             System.out.println();
-
         } // while
-        System.out.println("\nITERATION: " + ctr + "  All messages completed. Total messages delivered: " + msgCounter);
 
-
+        System.out.println("\nITERATION: " + iteration + "  All messages completed. Total messages delivered: " + completedMessages);
         int errorCtr = 0;
         int[] log = cb.getLog();
-        System.out.println("AMOUNT OF LOGGS: ");
+        System.out.println("AMOUNT OF LOGGS - WITH CIRCUIT BREAKER ");
+
         for(int i = 0; i < log.length; i++){
             System.out.println("Server ["+i+"]: " + log[i]);
             errorCtr += log[i];
         }
         System.out.println("Total Logs: " + errorCtr +", total calls: " + cb.getCalls());
-
     } // main
-
 } //class
 

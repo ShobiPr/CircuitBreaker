@@ -25,7 +25,6 @@ public class Endpoint {
         serverStatus[4] = false;
 
          for (int i = 0; i < numEndpoints; i++){
-            //long time = 200;
              long time = 680;
             reponseTime[i] = time;
         }
@@ -41,9 +40,9 @@ public class Endpoint {
 
      public Response sendResponse(Message msg){
         //System.out.println("In SendResponse, msg id: " + msg.getId() + ", server for port: " + msg.getPort() +", is: " + serverStatus[msg.getPort()]);
-        long random = (long)(Math.random() * 1000000);
+        long random = (long)(Math.random() * 100);
         long time;
-        if(random > 9900000 ) {
+        if(random > 99 ) {
             time = 2800;
         }else{
             //680
